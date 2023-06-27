@@ -32,17 +32,17 @@ THE SOFTWARE.
 #include "config.h"
 #include "gs_usb.h"
 #include "hal_include.h"
-#include "led.h"
+#include "led_trigger.h"
 #include "list.h"
 
-typedef struct {
+typedef struct can_channel {
 #if defined(STM32G0)
 	FDCAN_HandleTypeDef channel;
 #else
 	CAN_TypeDef *instance;
 #endif
 	struct list_head list_from_host;
-	led_data_t leds;
+	struct led_trigger led_trigger[LED_TRIGGER_TYPE_MAX];
 	uint32_t reg_esr_old;
 	uint16_t brp;
 	uint8_t phase_seg1;

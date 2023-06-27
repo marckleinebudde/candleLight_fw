@@ -78,28 +78,21 @@ int main(void)
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(hGS_CAN.channels); i++) {
 		const struct BoardChannelConfig *channel_config = &config.channels[i];
-		const struct LEDConfig *led_config = channel_config->leds;
 		can_data_t *channel = &hGS_CAN.channels[i];
 
 		channel->nr = i;
 
 		INIT_LIST_HEAD(&channel->list_from_host);
 
-		led_init(&channel->leds,
-				 led_config[LED_RX].port, led_config[LED_RX].pin, led_config[LED_RX].active_high,
-				 led_config[LED_TX].port, led_config[LED_TX].pin, led_config[LED_TX].active_high);
-
-		/* nice wake-up pattern */
-		for (uint8_t j = 0; j < 10; j++) {
-			HAL_GPIO_TogglePin(led_config[LED_RX].port, led_config[LED_RX].pin);
-			HAL_Delay(50);
-			HAL_GPIO_TogglePin(led_config[LED_TX].port, led_config[LED_TX].pin);
-		}
-
-		led_set_mode(&channel->leds, LED_MODE_OFF);
-
-		can_init(channel, config.channels[i].interface);
+		can_init(channel, channel_config->interface);
 		can_disable(channel);
+	}
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(hGS_CAN.leds); i++) {
+		const struct BoardLEDConfig *led_config = &config.leds[i];
+		struct led *led = &hGS_CAN.leds[i];
+
+		led_init(led, led_config);
 	}
 
 	USBD_Init(&hUSB, (USBD_DescriptorsTypeDef*)&FS_Desc, DEVICE_FS);
@@ -122,9 +115,9 @@ int main(void)
 
 			CAN_ReceiveFrame(&hGS_CAN, channel);
 			CAN_HandleError(&hGS_CAN, channel);
-
-			led_update(&channel->leds);
 		}
+
+		led_update(&hGS_CAN);
 
 		if (USBD_GS_CAN_DfuDetachRequested(&hUSB)) {
 			dfu_run_bootloader();

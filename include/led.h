@@ -26,59 +26,30 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
+#include "compiler.h"
 
-#define LED_UPDATE_INTERVAL 10  // number of ticks from HAL_GetTick
+struct usbd_gs_can;
 
-typedef enum {
-	LED_MODE_OFF,
-	LED_MODE_NORMAL,
-	LED_MODE_WARN,
-	LED_MODE_ERROR,
-	LED_MODE_SEQUENCE
-} led_mode_t;
+struct led_sequence_step {
+	bool on;
+	uint8_t duration;
+};
 
-typedef enum {
-	LED_RX = 0, //will also index into array led_state[]
-	LED_TX,
-	LED_MAX
-} led_num_t;
+struct led_sequence {
+	const struct led_sequence_step *steps;
+	uint8_t repeat;
+};
 
-typedef struct {
-	uint8_t state;
-	uint8_t time_in_10ms;
-} led_seq_step_t;
+struct led {
+	const struct BoardLEDConfig *config;
+	const struct led_sequence *sequence;
+	uint32_t next_step_time;
+	uint8_t step;
+	uint8_t repeat;
+};
 
-typedef struct {
-	void* port;
-	uint16_t pin;
-	bool is_active_high;
-
-	bool blink_request;
-	uint32_t on_until;
-	uint32_t off_until;
-} led_state_t;
-
-typedef struct {
-	led_mode_t mode;
-
-	const led_seq_step_t *sequence;
-	uint32_t sequence_step;
-	uint32_t t_sequence_next;
-	int32_t seq_num_repeat;
-
-	led_state_t led_state[LED_MAX];
-} led_data_t;
-
-
-void led_init(
-	led_data_t *leds,
-	void* led_rx_port, uint16_t led_rx_pin, bool led_rx_active_high,
-	void* led_tx_port, uint16_t led_tx_pin, bool led_tx_active_high
-	);
-void led_set_mode(led_data_t *leds,led_mode_t mode);
-void led_run_sequence(led_data_t *leds, const led_seq_step_t *sequence, int32_t num_repeat);
-void led_indicate_trx(led_data_t *leds, led_num_t num);
-void led_update(led_data_t *leds);
+void led_update(struct usbd_gs_can *hcan);
+void led_init(struct led *led, const struct BoardLEDConfig *config);

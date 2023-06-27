@@ -71,7 +71,7 @@ struct gs_host_frame_object {
 	};
 };
 
-typedef struct {
+struct usbd_gs_can {
 	uint8_t __aligned(4) ep0_buf[GS_CAN_EP0_BUF_SIZE];
 
 	USBD_SetupReqTypedef last_setup_request;
@@ -83,6 +83,7 @@ typedef struct {
 	struct gs_host_frame_object *to_host_buf;
 
 	can_data_t channels[NUM_CAN_CHANNEL];
+	struct led leds[NUM_LED];
 
 	bool dfu_detach_requested;
 
@@ -92,7 +93,9 @@ typedef struct {
 	bool pad_pkts_to_max_pkt_size;
 
 	struct gs_host_frame_object msgbuf[CAN_QUEUE_SIZE];
-} USBD_GS_CAN_HandleTypeDef __attribute__ ((aligned (4)));
+};
+
+typedef struct usbd_gs_can USBD_GS_CAN_HandleTypeDef;
 
 #if defined(STM32F0)
 # define USB_INTERFACE USB

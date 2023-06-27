@@ -1,10 +1,8 @@
-#pragma once
-
 /*
+ *
  * The MIT License (MIT)
  *
- * Copyright (c) 2023 Pengutronix,
- *               Jonas Martin <kernel@pengutronix.de>
+ * Copyright (c) 2016 Hubert Denkmair
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,34 +26,29 @@
  *
  */
 
-#include "usbd_gs_can.h"
+#pragma once
 
-struct BoardChannelConfig {
-#if defined(STM32G0)
-	FDCAN_GlobalTypeDef *interface;
-#else
-	CAN_TypeDef *interface;
-#endif
+#include <stdint.h>
+#include <stdbool.h>
+
+enum led_trigger_mode {
+	LED_TRIGGER_MODE_OFF,
+	LED_TRIGGER_MODE_NORMAL,
+	LED_TRIGGER_MODE_ACTIVITY,
 };
 
-struct BoardLEDTriggerConfig {
-	u8 channel;
-	u8 type;
+enum led_trigger_type {
+	LED_TRIGGER_TYPE_RX,
+	LED_TRIGGER_TYPE_TX,
+	LED_TRIGGER_TYPE_MAX,
 };
 
-struct BoardLEDConfig {
-	GPIO_TypeDef *port;
-	uint16_t pin;
-	struct BoardLEDTriggerConfig triggers[NUM_LED_TRIGGER];
-	bool active_high;
+struct led_trigger {
+	enum led_trigger_mode mode;
 };
 
-struct BoardConfig {
-	struct BoardChannelConfig channels[NUM_CAN_CHANNEL];
-	struct BoardLEDConfig leds[NUM_LED];
-	void (*setup)(USBD_GS_CAN_HandleTypeDef *hcan);
-	void (*phy_power_set)(can_data_t *channel, bool enable);
-	void (*termination_set)(can_data_t *channel, enum gs_can_termination_state state);
-};
+struct can_channel;
+typedef struct can_channel can_data_t;
 
-extern const struct BoardConfig config;
+void led_trigger(struct led_trigger *led_trigger);
+void led_trigger_channel_set_mode(can_data_t *channel, enum led_trigger_mode mode);

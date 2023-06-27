@@ -34,7 +34,7 @@ THE SOFTWARE.
 #include "gpio.h"
 #include "gs_usb.h"
 #include "hal_include.h"
-#include "led.h"
+#include "led_trigger.h"
 #include "timer.h"
 #include "usbd_core.h"
 #include "usbd_ctlreq.h"
@@ -470,11 +470,13 @@ static uint8_t USBD_GS_CAN_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef 
 	return USBD_OK;
 }
 
+#if 0
 static const led_seq_step_t led_identify_seq[] = {
 	{ .state = 0x01, .time_in_10ms = 10 },
 	{ .state = 0x02, .time_in_10ms = 10 },
 	{ .state = 0x00, .time_in_10ms = 0 }
 };
+#endif
 
 static uint8_t USBD_GS_CAN_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 
@@ -521,14 +523,14 @@ static uint8_t USBD_GS_CAN_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 
 			if (mode->mode == GS_CAN_MODE_RESET) {
 				can_disable(channel);
-				led_set_mode(&channel->leds, LED_MODE_OFF);
+				led_trigger_channel_set_mode(channel, LED_TRIGGER_MODE_OFF);
 			} else if (mode->mode == GS_CAN_MODE_START) {
 				hcan->timestamps_enabled = (mode->flags & GS_CAN_MODE_HW_TIMESTAMP) != 0;
 				hcan->pad_pkts_to_max_pkt_size = (mode->flags & GS_CAN_MODE_PAD_PKTS_TO_MAX_PKT_SIZE) != 0;
 
 				can_enable(channel, mode->flags);
 
-				led_set_mode(&channel->leds, LED_MODE_NORMAL);
+				led_trigger_channel_set_mode(channel, LED_TRIGGER_MODE_NORMAL);
 			}
 			break;
 		}
@@ -537,10 +539,10 @@ static uint8_t USBD_GS_CAN_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 
 			imode = (struct gs_identify_mode *)hcan->ep0_buf;
 			if (imode->mode) {
-				led_run_sequence(&channel->leds, led_identify_seq, -1);
+				//led_run_sequence(&channel->led_trigger, led_identify_seq, -1);
 			} else {
-				led_set_mode(&channel->leds, can_is_enabled(channel) ?
-							 LED_MODE_NORMAL : LED_MODE_OFF);
+				led_trigger_channel_set_mode(channel, can_is_enabled(channel) ?
+											 LED_TRIGGER_MODE_NORMAL : LED_TRIGGER_MODE_OFF);
 			}
 			break;
 		}
@@ -857,7 +859,7 @@ void USBD_GS_CAN_SuspendCallback(USBD_HandleTypeDef  *pdev)
 		can_data_t *channel = &hcan->channels[i];
 
 		can_disable(channel);
-		led_set_mode(&channel->leds, LED_MODE_OFF);
+		led_trigger_channel_set_mode(channel, LED_TRIGGER_MODE_OFF);
 	}
 
 	is_usb_suspend_cb = true;

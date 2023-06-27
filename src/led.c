@@ -26,40 +26,14 @@ THE SOFTWARE.
 
 #include <string.h>
 
+#include "board.h"
 #include "led.h"
-#include "hal_include.h"
-#include "util.h"
 
-#define SEQ_ISPASSED(now, target) ((int32_t) ((now) - (target)) >= 0)
+#define LED_UPDATE_INTERVAL 10  // number of ticks from HAL_GetTick
 
-void led_init(
-	led_data_t *leds,
-	void* led_rx_port, uint16_t led_rx_pin, bool led_rx_active_high,
-	void* led_tx_port, uint16_t led_tx_pin, bool led_tx_active_high
-	) {
-	memset(leds, 0, sizeof(led_data_t));
-	leds->led_state[LED_RX].port = led_rx_port;
-	leds->led_state[LED_RX].pin = led_rx_pin;
-	leds->led_state[LED_RX].is_active_high = led_rx_active_high;
-	leds->led_state[LED_TX].port = led_tx_port;
-	leds->led_state[LED_TX].pin = led_tx_pin;
-	leds->led_state[LED_TX].is_active_high = led_tx_active_high;
-}
+#define time_after(a, b) ((int)((b) - (a)) < 0)
 
-void led_set_mode(led_data_t *leds,led_mode_t mode)
-{
-	leds->mode = mode;
-	led_update(leds);
-}
-
-static void led_set(led_state_t *led, bool state)
-{
-	if (!led->is_active_high) {
-		state = !state;
-	}
-
-	HAL_GPIO_WritePin(led->port, led->pin, state ? GPIO_PIN_SET : GPIO_PIN_RESET);
-}
+#if 0
 
 static uint32_t led_set_sequence_step(led_data_t *leds, uint32_t step_num)
 {
@@ -82,28 +56,6 @@ void led_run_sequence(led_data_t *leds, const led_seq_step_t *sequence, int32_t 
 	leds->seq_num_repeat = num_repeat;
 	led_set_sequence_step(leds, 0);
 	led_update(leds);
-}
-
-void led_indicate_trx(led_data_t *leds, led_num_t num) {
-	leds->led_state[num].blink_request = 1;
-}
-
-static void led_trx_blinker(led_state_t *ledstate, uint32_t now) {
-	if ( SEQ_ISPASSED(now, ledstate->on_until) &&
-		 SEQ_ISPASSED(now, ledstate->off_until) ) {
-		ledstate->off_until = now + 30;
-		ledstate->on_until = now + 45;
-	}
-}
-
-static void led_update_normal_mode(led_state_t *led, uint32_t now)
-{
-	if (led->blink_request) {
-		led->blink_request = 0;
-		led_trx_blinker(led, now);
-	}
-
-	led_set(led, SEQ_ISPASSED(now, led->off_until));
 }
 
 static void led_update_sequence(led_data_t *leds)
@@ -138,32 +90,134 @@ static void led_update_sequence(led_data_t *leds)
 	}
 }
 
-void led_update(led_data_t *leds)
+#endif
+
+const struct led_sequence_step led_sequence_steps_activity[] = {
+	{
+		.on = false,
+		.duration = 30,
+	}, {
+		.on = true,
+		.duration = 20,
+	}, {
+		/* sentinel */
+	},
+};
+
+const struct led_sequence led_sequence_activity = {
+	.steps = led_sequence_steps_activity,
+	.repeat = 1,
+};
+
+static void led_set(struct led *led, bool on)
 {
-	static uint32_t next_update = 0;
-	uint32_t now = HAL_GetTick();
-	if (!SEQ_ISPASSED(now, next_update)) {
+	GPIO_PinState state = on ? GPIO_PIN_SET : GPIO_PIN_RESET;
+
+	if (!led->config->active_high) {
+		state = !state;
+	}
+
+	HAL_GPIO_WritePin(led->config->port, led->config->pin, state);
+}
+
+static void
+led_update_sequence(struct led *led, uint32_t now)
+{
+	const struct led_sequence *sequence = led->sequence;
+	const struct led_sequence_step *step;
+
+	if (!sequence || !time_after(now, led->next_step_time)) {
 		return;
 	}
-	next_update = now + LED_UPDATE_INTERVAL;
 
-	switch (leds->mode) {
+	step = &sequence->steps[led->step];
+	led_set(led, step->on);
 
-		case LED_MODE_OFF:
-			led_set(&leds->led_state[LED_RX], false);
-			led_set(&leds->led_state[LED_TX], false);
+	led->step++;
+	step = &sequence->steps[led->step];
+	if (!step->duration) {
+		led->repeat--;
+		if (!led->repeat)
+			return;     // FIXME
+
+		led->step = 0;
+		step = &sequence->steps[led->step];
+	}
+
+	led->next_step_time = now + step->duration;
+}
+
+static const struct led_trigger led_trigger_none[1] = {
+	{
+		.mode = LED_TRIGGER_MODE_OFF,
+	},
+};
+
+static struct led_trigger *
+led_update_one_trigger_get(USBD_GS_CAN_HandleTypeDef *hcan,
+						   const struct led *led)
+{
+	const struct BoardLEDConfig *led_config = led->config;
+	struct led_trigger *active_trigger = (struct led_trigger *)led_trigger_none;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(led_config->triggers); i++) {
+		const struct BoardLEDTriggerConfig *trigger_config = &led_config->triggers[i];
+		struct led_trigger *iter = &hcan->channels[trigger_config->channel].led_trigger[trigger_config->type];
+
+		if (iter->mode >= active_trigger->mode) {
+			if (active_trigger->mode == LED_TRIGGER_MODE_ACTIVITY) {
+				active_trigger->mode = LED_TRIGGER_MODE_NORMAL;
+			}
+
+			active_trigger = iter;
+		}
+	}
+
+	return active_trigger;
+}
+
+static void
+led_update_one(USBD_GS_CAN_HandleTypeDef *hcan, struct led *led, uint32_t now)
+{
+	struct led_trigger *trigger;
+
+	trigger = led_update_one_trigger_get(hcan, led);
+
+	switch (trigger->mode) {
+		case LED_TRIGGER_MODE_OFF:
+			led_set(led, false);
 			break;
 
-		case LED_MODE_NORMAL:
-			led_update_normal_mode(&leds->led_state[LED_RX], now);
-			led_update_normal_mode(&leds->led_state[LED_TX], now);
+		case LED_TRIGGER_MODE_NORMAL:
+			led_update_normal_mode(led, now);
 			break;
 
-		case LED_MODE_SEQUENCE:
-			led_update_sequence(leds);
+		case LED_TRIGGER_MODE_ACTIVITY:
 			break;
 
 		default:
 			assert_failed();
 	}
+}
+
+void led_update(USBD_GS_CAN_HandleTypeDef *hcan)
+{
+	static uint32_t next_update;
+	uint32_t now = HAL_GetTick();
+
+	if (!time_after(now, next_update)) {
+		return;
+	}
+	next_update = now + LED_UPDATE_INTERVAL;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(hcan->leds); i++) {
+		struct led *led = &hcan->leds[i];
+
+		led_update_one(hcan, led, now);
+	}
+}
+
+void led_init(struct led *led, const struct BoardLEDConfig *config)
+{
+	led->config = config;
 }

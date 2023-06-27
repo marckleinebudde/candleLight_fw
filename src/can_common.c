@@ -25,7 +25,7 @@ THE SOFTWARE.
 */
 
 #include "can_common.h"
-#include "led.h"
+#include "led_trigger.h"
 #include "timer.h"
 #include "usbd_gs_can.h"
 
@@ -82,7 +82,7 @@ void CAN_SendFrame(USBD_GS_CAN_HandleTypeDef *hcan, can_data_t *channel)
 
 	list_add_tail_locked(&frame_object->list, &hcan->list_to_host);
 
-	led_indicate_trx(&channel->leds, LED_TX);
+	led_trigger(&channel->led_trigger[LED_TRIGGER_TYPE_TX]);
 }
 
 void CAN_ReceiveFrame(USBD_GS_CAN_HandleTypeDef *hcan, can_data_t *channel)
@@ -117,7 +117,7 @@ void CAN_ReceiveFrame(USBD_GS_CAN_HandleTypeDef *hcan, can_data_t *channel)
 
 	list_add_tail_locked(&frame_object->list, &hcan->list_to_host);
 
-	led_indicate_trx(&channel->leds, LED_RX);
+	led_trigger(&channel->led_trigger[LED_TRIGGER_TYPE_RX]);
 }
 
 // If there are frames to receive, don't report any error frames. The

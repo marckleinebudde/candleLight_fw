@@ -322,6 +322,8 @@ THE SOFTWARE.
 
 	#define CAN_CLOCK_SPEED			 40000000
 	#define NUM_CAN_CHANNEL			 2
+	#define NUM_LED					 2
+	#define NUM_LED_TRIGGER			 2
 	#define CONFIG_CANFD			 1
 
 #elif defined(BOARD_CONVERTDEVICE_xCANFD)
@@ -333,6 +335,8 @@ THE SOFTWARE.
 
 	#define CAN_CLOCK_SPEED			 40000000
 	#define NUM_CAN_CHANNEL			 1
+	#define NUM_LED					 2
+	#define NUM_LED_TRIGGER			 2
 	#define CONFIG_CANFD			 1
 
 #elif defined(BOARD_budgetcan)
@@ -344,6 +348,8 @@ THE SOFTWARE.
 
 	#define CAN_CLOCK_SPEED			 40000000
 	#define NUM_CAN_CHANNEL			 2
+	#define NUM_LED					 2
+	#define NUM_LED_TRIGGER			 2
 	#define CONFIG_CANFD			 1
 
 #elif defined(BOARD_candleLightFD)
@@ -356,6 +362,8 @@ THE SOFTWARE.
 
 	#define CAN_CLOCK_SPEED			 40000000
 	#define NUM_CAN_CHANNEL			 2
+	#define NUM_LED					 2
+	#define NUM_LED_TRIGGER			 2
 	#define CONFIG_CANFD			 1
 
 #elif defined(BOARD_nucleo_g0b1re)
@@ -367,6 +375,8 @@ THE SOFTWARE.
 
 	#define CAN_CLOCK_SPEED			 64000000
 	#define NUM_CAN_CHANNEL			 1
+	#define NUM_LED					 1
+	#define NUM_LED_TRIGGER			 1
 	#define CONFIG_CANFD			 1
 
 #else
