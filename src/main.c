@@ -58,6 +58,26 @@ void __weak _read(void) {
 void __weak _write(void) {
 }
 
+static void DisableUSBSOFInterrupt(USBD_HandleTypeDef *pdev)
+{
+#if defined(USB) || defined(USB_DRD_FS)
+	// F0, G0 and G4 do not respect sof_enable field in their init structures
+	PCD_HandleTypeDef *pcd = (PCD_HandleTypeDef*)pdev->pData;
+
+#if defined(USB_DRD_FS)
+	// G0
+	USB_DRD_TypeDef *usb = pcd->Instance;
+#else
+	// F0 and G4
+	USB_TypeDef *usb = pcd->Instance;
+#endif
+
+	usb->CNTR &= ~(USB_CNTR_SOFM | USB_CNTR_ESOFM);
+#else
+	(void)pdev;
+#endif
+}
+
 int main(void)
 {
 	HAL_Init();
@@ -103,6 +123,7 @@ int main(void)
 	USBD_RegisterClass(&hUSB, &USBD_GS_CAN);
 	USBD_GS_CAN_Init(&hGS_CAN, &hUSB);
 	USBD_Start(&hUSB);
+	DisableUSBSOFInterrupt(&hUSB);
 
 	while (1) {
 		USBD_GS_CAN_SendReceiveFromHost(&hUSB);
