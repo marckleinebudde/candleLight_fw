@@ -511,6 +511,7 @@ static uint8_t USBD_GS_CAN_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 				can_disable(channel);
 				led_set_mode(&channel->leds, LED_MODE_OFF);
 			} else if (mode->mode == GS_CAN_MODE_START) {
+				hcan->short_echo_enabled = (mode->flags & GS_CAN_MODE_SHORT_ECHO) != 0;
 				hcan->timestamps_enabled = (mode->flags & GS_CAN_MODE_HW_TIMESTAMP) != 0;
 				hcan->pad_pkts_to_max_pkt_size = (mode->flags & GS_CAN_MODE_PAD_PKTS_TO_MAX_PKT_SIZE) != 0;
 
@@ -591,7 +592,13 @@ static uint8_t USBD_GS_CAN_PrepareTransmit(USBD_HandleTypeDef *pdev, struct gs_h
 		return USBD_BUSY;
 	}
 
-	if (IS_ENABLED(CONFIG_CANFD) &&
+	if (frame->flags & GS_CAN_FLAG_SHORT_ECHO) {
+		if (hcan->timestamps_enabled) {
+			len = struct_size(frame, short_echo_ts, 1);
+		} else {
+			len = struct_size(frame, short_echo, 1);
+		}
+	} else if (IS_ENABLED(CONFIG_CANFD) &&
 		frame->flags & GS_CAN_FLAG_FD) {
 		if (hcan->timestamps_enabled) {
 			len = struct_size(frame, canfd_ts, 1);

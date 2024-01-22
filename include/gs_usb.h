@@ -52,6 +52,7 @@ THE SOFTWARE.
 /* #define GS_CAN_FEATURE_TERMINATION           (1<<11) */
 #define GS_CAN_MODE_BERR_REPORTING (1<<12)
 /* GS_CAN_FEATURE_GET_STATE (1<<13) */
+#define GS_CAN_MODE_SHORT_ECHO					(1<<14)
 
 #define GS_CAN_FEATURE_LISTEN_ONLY				(1<<0)
 #define GS_CAN_FEATURE_LOOP_BACK				(1<<1)
@@ -79,11 +80,13 @@ THE SOFTWARE.
 #define GS_CAN_FEATURE_TERMINATION				(1<<11)
 #define GS_CAN_FEATURE_BERR_REPORTING			(1<<12)
 #define GS_CAN_FEATURE_GET_STATE				(1<<13)
+#define GS_CAN_FEATURE_SHORT_ECHO				(1<<14)
 
 #define GS_CAN_FLAG_OVERFLOW					(1<<0)
 #define GS_CAN_FLAG_FD							(1<<1) /* is a CAN-FD frame */
 #define GS_CAN_FLAG_BRS							(1<<2) /* bit rate switch (for CAN-FD frames) */
 #define GS_CAN_FLAG_ESI							(1<<3) /* error state indicator (for CAN-FD frames) */
+#define GS_CAN_FLAG_SHORT_ECHO					(1<<4)
 
 #define CAN_EFF_FLAG							0x80000000U /* EFF/SFF is set in the MSB */
 #define CAN_RTR_FLAG							0x40000000U /* remote transmission request */
@@ -334,6 +337,13 @@ struct canfd_ts {
 	u32 timestamp_us;
 } __packed __aligned(4);
 
+struct short_echo {
+} __packed __aligned(4);
+
+struct short_echo_ts {
+	u32 timestamp_us;
+} __packed __aligned(4);
+
 struct gs_host_frame {
 	u32 echo_id;
 	u32 can_id;
@@ -348,5 +358,7 @@ struct gs_host_frame {
 		DECLARE_FLEX_ARRAY(struct classic_can_ts, classic_can_ts);
 		DECLARE_FLEX_ARRAY(struct canfd,		  canfd);
 		DECLARE_FLEX_ARRAY(struct canfd_ts,		  canfd_ts);
+		DECLARE_FLEX_ARRAY(struct short_echo,	  short_echo);
+		DECLARE_FLEX_ARRAY(struct short_echo_ts,  short_echo_ts);
 	};
 } __packed __aligned(4);

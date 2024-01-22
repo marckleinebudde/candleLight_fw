@@ -75,10 +75,15 @@ void CAN_SendFrame(USBD_GS_CAN_HandleTypeDef *hcan, can_data_t *channel)
 
 	// Echo sent frame back to host
 	frame->reserved = 0x0;
-	if (IS_ENABLED(CONFIG_CANFD) && frame->flags & GS_CAN_FLAG_FD)
+
+	if (hcan->short_echo_enabled) {
+		frame->flags |= GS_CAN_FLAG_SHORT_ECHO;
+		frame->short_echo_ts->timestamp_us = timer_get();
+	} else if (IS_ENABLED(CONFIG_CANFD) && frame->flags & GS_CAN_FLAG_FD) {
 		frame->canfd_ts->timestamp_us = timer_get();
-	else
+	} else {
 		frame->classic_can_ts->timestamp_us = timer_get();
+	}
 
 	list_add_tail_locked(&frame_object->list, &hcan->list_to_host);
 
