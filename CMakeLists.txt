@@ -202,6 +202,15 @@ populate_ldscript(CPU_FAMILY STM32G0B1XK
 	HEAP_SIZE 1k
 )
 
+populate_ldscript(CPU_FAMILY STM32G0B1XB
+		FLASH_START 0x08000000
+		FLASH_SIZE 128k
+		RAM_START 0x20000000
+		RAM_SIZE 144k
+		STACK_SIZE 2k
+		HEAP_SIZE 1k
+)
+
 ######### commands for adding each target have a lot in common: make helper func.
 # Split into two categories, F042-based and F072-based.
 
@@ -249,7 +258,7 @@ function(add_f407_target TGTNAME)
 	target_link_libraries(${TGTNAME}_fw PRIVATE STM32_HAL_STM32F407xE STM32_USB_Device_Library_STM32F407xE)
 endfunction()
 
-function(add_g0b1_target TGTNAME)
+function(add_g0b1xk_target TGTNAME)
 	add_target_common(${TGTNAME} STM32G0B1XK)
 	target_compile_definitions(${TGTNAME}_fw PRIVATE BOARD_${TGTNAME} STM32G0)
 	target_compile_options(${TGTNAME}_fw BEFORE PRIVATE ${CPUFLAGS_G0})
@@ -257,7 +266,18 @@ function(add_g0b1_target TGTNAME)
 	target_sources(${TGTNAME}_fw PRIVATE "src/can/m_can.c")
 	target_sources(${TGTNAME}_fw PRIVATE "src/device/device_g0.c")
 	target_link_options(${TGTNAME}_fw BEFORE PRIVATE ${CPUFLAGS_G0})
-	target_link_libraries(${TGTNAME}_fw PRIVATE STM32_HAL_STM32G0B1xK STM32_USB_Device_Library_STM32G0B1xK)
+	target_link_libraries(${TGTNAME}_fw PRIVATE STM32_HAL_STM32G0B1xx STM32_USB_Device_Library_STM32G0B1xx)
+endfunction()
+
+function(add_g0b1xb_target TGTNAME)
+	add_target_common(${TGTNAME} STM32G0B1XB)
+	target_compile_definitions(${TGTNAME}_fw PRIVATE BOARD_${TGTNAME} STM32G0)
+	target_compile_options(${TGTNAME}_fw BEFORE PRIVATE ${CPUFLAGS_G0})
+	target_sources(${TGTNAME}_fw PRIVATE "src/boards/g0b1-${TGTNAME}.c")
+	target_sources(${TGTNAME}_fw PRIVATE "src/can/m_can.c")
+	target_sources(${TGTNAME}_fw PRIVATE "src/device/device_g0.c")
+	target_link_options(${TGTNAME}_fw BEFORE PRIVATE ${CPUFLAGS_G0})
+	target_link_libraries(${TGTNAME}_fw PRIVATE STM32_HAL_STM32G0B1xx STM32_USB_Device_Library_STM32G0B1xx)
 endfunction()
 
 ########## generate list of targets.
@@ -266,6 +286,7 @@ set(TGTF042_LIST "cantact" "canalyze" "canable" "usb2can" "cannette")
 set(TGTF072_LIST "candleLight" "CANable_MKS" "CONVERTDEVICE_xCAN" "DSD_TECH_SH_C30A" "FYSETC_UCAN")
 set(TGTF407_LIST "STM32F4_DevBoard")
 set(TGTG0B1_LIST "budgetcan" "CONVERTDEVICE_xCANFD" "nucleo_g0b1re" "candleLightFD")
+set(TGTG0B1XB_LIST "2C2L_USB")
 
 foreach (TGTNAME IN LISTS TGTF042_LIST)
 	option(BUILD_${TGTNAME} "Build firmware for \"${TGTNAME}\" (default=yes)" ON)
@@ -291,7 +312,14 @@ endforeach()
 foreach (TGTNAME IN LISTS TGTG0B1_LIST)
 	option(BUILD_${TGTNAME} "Build firmware for \"${TGTNAME}\" (default=yes)" ON)
 	if (BUILD_${TGTNAME})
-		add_g0b1_target(${TGTNAME})
+		add_g0b1xk_target(${TGTNAME})
+	endif()
+endforeach()
+
+foreach (TGTNAME IN LISTS TGTG0B1XB_LIST)
+	option(BUILD_${TGTNAME} "Build firmware for \"${TGTNAME}\" (default=yes)" ON)
+	if (BUILD_${TGTNAME})
+		add_g0b1xb_target(${TGTNAME})
 	endif()
 endforeach()
 

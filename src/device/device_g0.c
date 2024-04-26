@@ -41,7 +41,7 @@ void device_sysclock_config(void) {
 	/** Initializes the RCC Oscillators according to the specified parameters
 	* in the RCC_OscInitTypeDef structure.
 	*/
-#if defined(BOARD_candleLightFD)
+#if defined(BOARD_candleLightFD) || defined(BOARD_2C2L_USB)
 	/* CandleLightFD has an externel 8MHz crystal */
 	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_HSI48;
 	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
