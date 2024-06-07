@@ -148,34 +148,45 @@ const struct BoardConfig config = {
 	.termination_set = candlelightfd_termination_set,
 	.channels[0] = {
 		.interface = FDCAN1,
-		.leds = {
-			[LED_RX] = {
-				.port = LEDRX_GPIO_Port,
-				.pin = LEDRX_Pin,
-				.active_high = LEDRX_Active_High,
-			},
-			[LED_TX] = {
-				.port = LEDTX_GPIO_Port,
-				.pin = LEDTX_Pin,
-				.active_high = LEDTX_Active_High,
-			},
-		},
 	},
 #if NUM_CAN_CHANNEL == 2
 	.channels[1] = {
 		.interface = FDCAN2,
-		.leds = {
-			[LED_RX] = {
-				.port = LEDRX_GPIO_Port,
-				.pin = LEDRX_Pin,
-				.active_high = LEDRX_Active_High,
+	},
+#endif
+	.leds = {
+		{
+			.port = LEDRX_GPIO_Port,
+			.pin = LEDRX_Pin,
+			.active_high = LEDRX_Active_High,
+			.triggers = {
+				{
+					.channel = 0,
+					.type = LED_TRIGGER_TYPE_RX,
+				},
+#if NUM_LED_TRIGGER == 2
+				{
+					.channel = 1,
+					.type = LED_TRIGGER_TYPE_RX,
+				}
+#endif
 			},
-			[LED_TX] = {
-				.port = LEDTX_GPIO_Port,
-				.pin = LEDTX_Pin,
-				.active_high = LEDTX_Active_High,
+		}, {
+			.port = LEDTX_GPIO_Port,
+			.pin = LEDTX_Pin,
+			.active_high = LEDTX_Active_High,
+			.triggers = {
+				{
+					.channel = 0,
+					.type = LED_TRIGGER_TYPE_TX,
+				},
+#if NUM_LED_TRIGGER == 2
+				{
+					.channel = 1,
+					.type = LED_TRIGGER_TYPE_TX,
+				}
+#endif
 			},
 		},
 	},
-#endif
 };
