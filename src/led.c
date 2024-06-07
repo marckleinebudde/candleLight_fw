@@ -121,24 +121,26 @@ static void led_set(struct led *led, bool on)
 }
 
 static void
-led_update_sequence(struct led *led, uint32_t now)
+led_update_sequence(struct led *led, struct led_trigger *trigger, uint32_t now)
 {
 	const struct led_sequence *sequence = led->sequence;
-	const struct led_sequence_step *step;
+	const struct led_sequence_step *step = &sequence->steps[led->step];
 
-	if (!sequence || !time_after(now, led->next_step_time)) {
+	if (!time_after(now, led->next_step_time)) {
 		return;
 	}
 
-	step = &sequence->steps[led->step];
 	led_set(led, step->on);
-
 	led->step++;
+
 	step = &sequence->steps[led->step];
 	if (!step->duration) {
 		led->repeat--;
-		if (!led->repeat)
-			return;     // FIXME
+		if (!led->repeat) {
+			trigger->mode = LED_TRIGGER_MODE_NORMAL;
+
+			return;
+		}
 
 		led->step = 0;
 		step = &sequence->steps[led->step];
@@ -165,33 +167,16 @@ led_update_one_trigger_get(USBD_GS_CAN_HandleTypeDef *hcan,
 		struct led_trigger *iter = &hcan->channels[trigger_config->channel].led_trigger[trigger_config->type];
 
 		if (iter->mode >= active_trigger->mode) {
-			if (active_trigger->mode == LED_TRIGGER_MODE_ACTIVITY) {
-				active_trigger->mode = LED_TRIGGER_MODE_NORMAL;
-			}
+			/* mark previous trigger as done */
+            if (active_trigger->mode >= LED_TRIGGER_MODE_ACTIVITY) {
+                active_trigger->mode = LED_TRIGGER_MODE_NORMAL;
+            }
 
 			active_trigger = iter;
 		}
 	}
 
 	return active_trigger;
-}
-
-static void led_blink(struct led *led, uint32_t now) {
-    if (time_after(now, led->on_until) &&
-        time_after(now, led->off_until)) {
-        led->off_until = now + 30;
-        led->on_until = now + 50;
-}
-
-static void
-led_update_normal_mode(struct led *led, struct led_trigger *trigger, uint32_t now)
-{
-	if (trigger->blink_request) {
-		trigger->blink_request = false;
-		led_blink(led, now);
-	}
-
-	led_set(led, time_after(now, led->off_until));
 }
 
 static void
@@ -207,14 +192,12 @@ led_update_one(USBD_GS_CAN_HandleTypeDef *hcan, struct led *led, uint32_t now)
 			break;
 
 		case LED_TRIGGER_MODE_NORMAL:
-			led_update_normal_mode(led, now);
+			led_set(led, true);
 			break;
 
 		case LED_TRIGGER_MODE_ACTIVITY:
+			led_update_sequence(led, trigger, now);
 			break;
-
-		default:
-			assert_failed();
 	}
 }
 

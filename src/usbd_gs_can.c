@@ -529,7 +529,6 @@ static uint8_t USBD_GS_CAN_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 				hcan->pad_pkts_to_max_pkt_size = (mode->flags & GS_CAN_MODE_PAD_PKTS_TO_MAX_PKT_SIZE) != 0;
 
 				can_enable(channel, mode->flags);
-
 				led_trigger_channel_set_mode(channel, LED_TRIGGER_MODE_NORMAL);
 			}
 			break;

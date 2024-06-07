@@ -50,5 +50,5 @@ struct led_trigger {
 struct can_channel;
 typedef struct can_channel can_data_t;
 
-void led_trigger(struct led_trigger *led_trigger);
+void led_trigger_activity(struct led_trigger *led_trigger);
 void led_trigger_channel_set_mode(can_data_t *channel, enum led_trigger_mode mode);

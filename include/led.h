@@ -34,8 +34,8 @@ THE SOFTWARE.
 struct usbd_gs_can;
 
 struct led_sequence_step {
-	bool on;
 	uint8_t duration;
+	bool on;
 };
 
 struct led_sequence {

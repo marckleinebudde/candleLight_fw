@@ -82,7 +82,7 @@ void CAN_SendFrame(USBD_GS_CAN_HandleTypeDef *hcan, can_data_t *channel)
 
 	list_add_tail_locked(&frame_object->list, &hcan->list_to_host);
 
-	led_trigger(&channel->led_trigger[LED_TRIGGER_TYPE_TX]);
+	led_trigger_activity(&channel->led_trigger[LED_TRIGGER_TYPE_TX]);
 }
 
 void CAN_ReceiveFrame(USBD_GS_CAN_HandleTypeDef *hcan, can_data_t *channel)
@@ -117,7 +117,7 @@ void CAN_ReceiveFrame(USBD_GS_CAN_HandleTypeDef *hcan, can_data_t *channel)
 
 	list_add_tail_locked(&frame_object->list, &hcan->list_to_host);
 
-	led_trigger(&channel->led_trigger[LED_TRIGGER_TYPE_RX]);
+	led_trigger_activity(&channel->led_trigger[LED_TRIGGER_TYPE_RX]);
 }
 
 // If there are frames to receive, don't report any error frames. The
