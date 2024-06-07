@@ -176,6 +176,24 @@ led_update_one_trigger_get(USBD_GS_CAN_HandleTypeDef *hcan,
 	return active_trigger;
 }
 
+static void led_blink(struct led *led, uint32_t now) {
+    if (time_after(now, led->on_until) &&
+        time_after(now, led->off_until)) {
+        led->off_until = now + 30;
+        led->on_until = now + 50;
+}
+
+static void
+led_update_normal_mode(struct led *led, struct led_trigger *trigger, uint32_t now)
+{
+	if (trigger->blink_request) {
+		trigger->blink_request = false;
+		led_blink(led, now);
+	}
+
+	led_set(led, time_after(now, led->off_until));
+}
+
 static void
 led_update_one(USBD_GS_CAN_HandleTypeDef *hcan, struct led *led, uint32_t now)
 {
