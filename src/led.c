@@ -168,9 +168,9 @@ led_update_one_trigger_get(USBD_GS_CAN_HandleTypeDef *hcan,
 
 		if (iter->mode >= active_trigger->mode) {
 			/* mark previous trigger as done */
-            if (active_trigger->mode >= LED_TRIGGER_MODE_ACTIVITY) {
-                active_trigger->mode = LED_TRIGGER_MODE_NORMAL;
-            }
+			if (active_trigger->mode >= LED_TRIGGER_MODE_ACTIVITY) {
+				active_trigger->mode = LED_TRIGGER_MODE_NORMAL;
+			}
 
 			active_trigger = iter;
 		}
