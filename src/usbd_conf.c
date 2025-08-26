@@ -34,44 +34,40 @@ THE SOFTWARE.
 PCD_HandleTypeDef hpcd_USB_FS;
 
 void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
-{
-	if (hpcd->Instance==USB_INTERFACE) {
+	{
+		if (hpcd->Instance==USB_INTERFACE) {
 
-#if defined(USB)
-		__HAL_RCC_USB_CLK_ENABLE();
-#elif defined(USB_OTG_FS)
-		__HAL_RCC_USB_OTG_FS_CLK_ENABLE();
-#elif defined(USB_DRD_FS)
-		__HAL_RCC_USB_CLK_ENABLE();
-		HAL_SYSCFG_StrobeDBattpinsConfig(SYSCFG_CFGR1_UCPD1_STROBE);
-		/* Enable VDDUSB */
-		if (__HAL_RCC_PWR_IS_CLK_DISABLED())
-		{
-			__HAL_RCC_PWR_CLK_ENABLE();
-			HAL_PWREx_EnableVddUSB();
-			__HAL_RCC_PWR_CLK_DISABLE();
-		}
-		else
-		{
-			HAL_PWREx_EnableVddUSB();
-		}
-#endif
-		HAL_NVIC_SetPriority(USB_INTERRUPT, 1, 0);
-		HAL_NVIC_EnableIRQ(USB_INTERRUPT);
+		#if defined(USB)
+				__HAL_RCC_USB_CLK_ENABLE();
+		#elif defined(USB_OTG_FS)
+				__HAL_RCC_USB_OTG_FS_CLK_ENABLE();
+		#elif defined(USB_DRD_FS)
+				RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+				PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+				PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
+				HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
+				__HAL_RCC_USB_CLK_ENABLE();
+				HAL_PWREx_EnableVddUSB();
+		#endif
+				HAL_NVIC_SetPriority(USB_INTERRUPT, 1, 0);
+				HAL_NVIC_EnableIRQ(USB_INTERRUPT);
+			}
 	}
-}
 
 void HAL_PCD_MspDeInit(PCD_HandleTypeDef* hpcd)
-{
-	if (hpcd->Instance==USB_INTERFACE) {
-#if defined(USB) || defined(USB_DRD_FS)
-		__HAL_RCC_USB_CLK_DISABLE();
-#elif defined(USB_OTG_FS)
-		__HAL_RCC_USB_OTG_FS_CLK_DISABLE();
-#endif
-		HAL_NVIC_DisableIRQ(USB_INTERRUPT);
+	{
+		if (hpcd->Instance==USB_INTERFACE) {
+	#if defined(USB) || defined(USB_DRD_FS)
+			__HAL_RCC_USB_CLK_DISABLE();
+	#elif defined(USB_OTG_FS)
+			__HAL_RCC_USB_OTG_FS_CLK_DISABLE();
+	#endif
+	#if defined(STM32H5)
+			HAL_PWREx_DisableVddUSB();
+	#endif
+			HAL_NVIC_DisableIRQ(USB_INTERRUPT);
+		}
 	}
-}
 
 void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 {
@@ -146,6 +142,12 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 	hpcd_USB_FS.Init.vbus_sensing_enable = DISABLE;
 	hpcd_USB_FS.Init.use_dedicated_ep1 = DISABLE;
 #elif defined(STM32G0)
+	hpcd_USB_FS.Init.Sof_enable = DISABLE;
+	hpcd_USB_FS.Init.battery_charging_enable = DISABLE;
+	hpcd_USB_FS.Init.vbus_sensing_enable = DISABLE;
+	hpcd_USB_FS.Init.bulk_doublebuffer_enable = ENABLE;
+	hpcd_USB_FS.Init.iso_singlebuffer_enable = DISABLE;
+#elif defined(STM32H5)
 	hpcd_USB_FS.Init.Sof_enable = DISABLE;
 	hpcd_USB_FS.Init.battery_charging_enable = DISABLE;
 	hpcd_USB_FS.Init.vbus_sensing_enable = DISABLE;

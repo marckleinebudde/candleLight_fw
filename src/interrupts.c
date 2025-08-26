@@ -44,12 +44,19 @@ void SysTick_Handler(void)
 	HAL_IncTick();
 	HAL_SYSTICK_IRQHandler();
 }
-
 extern PCD_HandleTypeDef hpcd_USB_FS;
-void USB_Handler(void)
-{
-	HAL_PCD_IRQHandler(&hpcd_USB_FS);
-}
+
+#if defined(STM32H5)
+	void USB_DRD_FS_IRQHandler(void)
+	{
+		HAL_PCD_IRQHandler(&hpcd_USB_FS);
+	}
+#else
+	void USB_Handler(void)
+	{
+		HAL_PCD_IRQHandler(&hpcd_USB_FS);
+	}
+#endif
 
 void Default_Handler(void)
 {
@@ -258,5 +265,24 @@ const pFunc InterruptVectorTable[48] = {
 	0,                    /* USART3, USART4, USART5, USART6, LPUART1   */
 	0,                    /* CEC                          */
 	// don't need to define any interrupts after this one
+};
+#elif defined(STM32H5)
+__attribute__((used, section(".vectors")))
+const pFunc InterruptVectorTable[149] = {
+    (pFunc)(&__StackTop), // 0: initial stack pointer
+    Reset_Handler,        // 1: Reset
+    NMI_Handler,          // 2
+    HardFault_Handler,    // 3
+    0,                    // 4: MemManage
+    0,                    // 5: BusFault
+    0,                    // 6: UsageFault
+    0,                    // 7: SecureFault
+    0, 0, 0,              // 8-10: Reserved
+    0,                    // 11: SVC
+    0,                    // 12: DebugMon
+    0,                    // 13: Reserved
+    0,                    // 14: PendSV
+    SysTick_Handler,      // 15: SysTick
+	[16 + USB_DRD_FS_IRQn] = USB_DRD_FS_IRQHandler,
 };
 #endif

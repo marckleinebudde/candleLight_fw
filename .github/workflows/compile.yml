@@ -13,7 +13,6 @@ jobs:
         - "ubuntu:22.04"
         - "ubuntu:24.04"
         - "ubuntu:rolling"
-        - "debian:oldstable-slim"
         - "debian:stable-slim"
         - "debian:testing-slim"
         - "debian:unstable-slim"

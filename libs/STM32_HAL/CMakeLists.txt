@@ -171,6 +171,67 @@ set(STM32G0_SOURCES
     include/cmsis/device/system_stm32g0xx.h
 )
 
+set(STM32H5_SOURCES
+    config/stm32h5xx_hal_conf.h
+
+    include/stm32h5xx/stm32h5xx_hal_def.h
+    include/stm32h5xx/stm32h5xx_hal.h
+    src/stm32h5xx/stm32h5xx_hal.c
+
+    include/stm32h5xx/stm32h5xx_hal_cortex.h
+    src/stm32h5xx/stm32h5xx_hal_cortex.c
+
+    include/stm32h5xx/stm32h5xx_hal_dma_ex.h
+    src/stm32h5xx/stm32h5xx_hal_dma_ex.c
+    include/stm32h5xx/stm32h5xx_hal_dma.h
+    src/stm32h5xx/stm32h5xx_hal_dma.c
+
+    include/stm32h5xx/stm32h5xx_hal_exti.h
+    src/stm32h5xx/stm32h5xx_hal_exti.c
+
+    include/stm32h5xx/stm32h5xx_hal_fdcan.h
+    src/stm32h5xx/stm32h5xx_hal_fdcan.c
+
+    include/stm32h5xx/stm32h5xx_hal_flash_ex.h
+    src/stm32h5xx/stm32h5xx_hal_flash_ex.c
+    include/stm32h5xx/stm32h5xx_hal_flash.h
+    src/stm32h5xx/stm32h5xx_hal_flash.c
+
+    include/stm32h5xx/stm32h5xx_hal_gpio_ex.h
+    include/stm32h5xx/stm32h5xx_hal_gpio.h
+    src/stm32h5xx/stm32h5xx_hal_gpio.c
+
+    include/stm32h5xx/stm32h5xx_hal_pcd_ex.h
+    src/stm32h5xx/stm32h5xx_hal_pcd_ex.c
+    include/stm32h5xx/stm32h5xx_hal_pcd.h
+    src/stm32h5xx/stm32h5xx_hal_pcd.c
+
+    include/stm32h5xx/stm32h5xx_hal_pwr_ex.h
+    src/stm32h5xx/stm32h5xx_hal_pwr_ex.c
+    include/stm32h5xx/stm32h5xx_hal_pwr.h
+    src/stm32h5xx/stm32h5xx_hal_pwr.c
+
+    include/stm32h5xx/stm32h5xx_hal_rcc_ex.h
+    src/stm32h5xx/stm32h5xx_hal_rcc_ex.c
+    include/stm32h5xx/stm32h5xx_hal_rcc.h
+    src/stm32h5xx/stm32h5xx_hal_rcc.c
+
+    include/stm32h5xx/stm32h5xx_ll_usb.h
+    src/stm32h5xx/stm32h5xx_ll_usb.c
+
+    include/stm32h5xx/Legacy/stm32_hal_legacy.h
+
+    src/cmsis/system_stm32h5xx.c
+    include/cmsis/cmsis_compiler.h
+    include/cmsis/cmsis_device.h
+    include/cmsis/cmsis_gcc.h
+    include/cmsis/cmsis_version.h
+    include/cmsis/core_cm33.h
+    include/cmsis/device/stm32h5xx.h
+    include/cmsis/device/stm32h523xx.h
+    include/cmsis/device/system_stm32h5xx.h
+)
+
 set(INCLUDE_DIRS
     include/
     include/cmsis
@@ -197,3 +258,8 @@ add_library(STM32_HAL_STM32G0B1xx STATIC ${STM32G0_SOURCES})
     target_include_directories(STM32_HAL_STM32G0B1xx PUBLIC ${INCLUDE_DIRS} include/stm32g0xx)
     target_compile_options(STM32_HAL_STM32G0B1xx PRIVATE ${CPUFLAGS_G0} -Wno-unused-parameter)
     target_compile_definitions(STM32_HAL_STM32G0B1xx PUBLIC STM32G0B1xx HAL_TARGET_PREFIX=stm32g0xx)
+    
+add_library(STM32_HAL_STM32H523xx STATIC ${STM32H5_SOURCES})
+    target_include_directories(STM32_HAL_STM32H523xx PUBLIC ${INCLUDE_DIRS} include/stm32h5xx)
+    target_compile_options(STM32_HAL_STM32H523xx PRIVATE ${CPUFLAGS_H5} -Wno-unused-parameter)
+    target_compile_definitions(STM32_HAL_STM32H523xx PUBLIC STM32H523xx HAL_TARGET_PREFIX=stm32h5xx)
