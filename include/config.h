@@ -369,6 +369,18 @@ THE SOFTWARE.
 	#define NUM_CAN_CHANNEL			 1
 	#define CONFIG_CANFD			 1
 
+#elif defined(BOARD_candleLightFD_H523)
+	#define USBD_PRODUCT_STRING_FS	 "candleLightFD_H523 gs_usb"
+	#define USBD_MANUFACTURER_STRING "candleLightFD_H523"
+	#define DFU_INTERFACE_STRING_FS	 "candleLightFD_H523 firmware upgrade interface"
+
+	#define HSE_OSC_SPEED			 8000000
+	#define TIM2_CLOCK_SPEED		 240000000
+
+	#define CAN_CLOCK_SPEED			 80000000
+	#define NUM_CAN_CHANNEL			 2
+	#define CONFIG_CANFD			 1
+
 #else
 	#error please define BOARD
 #endif

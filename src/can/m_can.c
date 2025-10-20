@@ -27,8 +27,37 @@ THE SOFTWARE.
 #include "board.h"
 #include "can.h"
 #include "hal_include.h"
+#if defined(STM32H5)
+#include "stm32h523xx.h"
+#elif defined(STM32G0)
 #include "stm32g0b1xx.h"
+#endif
 #include "timer.h"
+
+#if defined(STM32H5)
+	static const uint32_t dlc_map[] = {
+		FDCAN_DLC_BYTES_0, FDCAN_DLC_BYTES_1, FDCAN_DLC_BYTES_2, FDCAN_DLC_BYTES_3,
+		FDCAN_DLC_BYTES_4, FDCAN_DLC_BYTES_5, FDCAN_DLC_BYTES_6, FDCAN_DLC_BYTES_7,
+		FDCAN_DLC_BYTES_8, FDCAN_DLC_BYTES_12, FDCAN_DLC_BYTES_16, FDCAN_DLC_BYTES_20,
+		FDCAN_DLC_BYTES_24, FDCAN_DLC_BYTES_32, FDCAN_DLC_BYTES_48, FDCAN_DLC_BYTES_64
+	};
+
+	static uint32_t dlc_to_hal_bytes(uint8_t dlc) {
+		if (dlc >= sizeof(dlc_map) / sizeof(dlc_map[0])) {
+			return FDCAN_DLC_BYTES_64;
+		}
+		return dlc_map[dlc];
+	}
+
+	static uint8_t hal_bytes_to_dlc(uint32_t hal_bytes) {
+		for (uint8_t i = 0; i < sizeof(dlc_map) / sizeof(dlc_map[0]); ++i) {
+			if (dlc_map[i] == hal_bytes) {
+				return i;
+			}
+		}
+		return 15;
+	}
+#endif
 
 // bit timing constraints
 const struct gs_device_bt_const CAN_btconst = {
@@ -96,6 +125,26 @@ const struct gs_device_bt_const_extended CAN_btconst_ext = {
 void can_init(can_data_t *channel, FDCAN_GlobalTypeDef *instance)
 {
 	channel->channel.Instance = instance;
+#if defined(STM32H5)
+	channel->channel.Init.ClockDivider = FDCAN_CLOCK_DIV1;
+	channel->channel.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
+	channel->channel.Init.Mode = FDCAN_MODE_NORMAL;
+	channel->channel.Init.AutoRetransmission = ENABLE;
+	channel->channel.Init.TransmitPause = DISABLE;
+	channel->channel.Init.ProtocolException = ENABLE;
+	channel->channel.Init.NominalPrescaler = 8;
+	channel->channel.Init.NominalSyncJumpWidth = 1;
+	channel->channel.Init.NominalTimeSeg1 = 16;
+	channel->channel.Init.NominalTimeSeg2 = 3;
+	channel->channel.Init.DataPrescaler = 2;
+	channel->channel.Init.DataSyncJumpWidth = 4;
+	channel->channel.Init.DataTimeSeg1 = 15;
+	channel->channel.Init.DataTimeSeg2 = 4;
+	channel->channel.Init.StdFiltersNbr = 0;
+	channel->channel.Init.ExtFiltersNbr = 0;
+	channel->channel.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+
+#elif defined(STM32G0)
 	channel->channel.Init.ClockDivider = FDCAN_CLOCK_DIV1;
 	channel->channel.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
 	channel->channel.Init.Mode = FDCAN_MODE_NORMAL;
@@ -113,6 +162,7 @@ void can_init(can_data_t *channel, FDCAN_GlobalTypeDef *instance)
 	channel->channel.Init.StdFiltersNbr = 0;
 	channel->channel.Init.ExtFiltersNbr = 0;
 	channel->channel.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+#endif
 }
 
 void can_set_bittiming(can_data_t *channel, const struct gs_device_bittiming *timing)
@@ -229,8 +279,11 @@ bool can_receive(can_data_t *channel, struct gs_host_frame *rx_frame)
 		rx_frame->can_id |= CAN_RTR_FLAG;
 	}
 
+#if defined(STM32H5)
+	rx_frame->can_dlc = hal_bytes_to_dlc(RxHeader.DataLength);
+#else
 	rx_frame->can_dlc = (RxHeader.DataLength & 0x000F0000) >> 16;
-
+#endif
 	if (RxHeader.FDFormat == FDCAN_FD_CAN) {
 		rx_frame->canfd_ts->timestamp_us = timestamp_us;
 
@@ -258,8 +311,12 @@ bool can_is_rx_pending(can_data_t *channel)
 bool can_send(can_data_t *channel, struct gs_host_frame *frame)
 {
 	FDCAN_TxHeaderTypeDef TxHeader = {
+#if defined(STM32H5)
+		.DataLength = dlc_to_hal_bytes(frame->can_dlc),
+#else
 		.DataLength = frame->can_dlc << 16,
-			.TxEventFifoControl = FDCAN_NO_TX_EVENTS,
+#endif
+		.TxEventFifoControl = FDCAN_NO_TX_EVENTS,
 	};
 
 	TxHeader.TxFrameType =

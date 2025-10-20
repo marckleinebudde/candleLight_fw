@@ -37,7 +37,7 @@ struct LEDConfig {
 };
 
 struct BoardChannelConfig {
-#if defined(STM32G0)
+#if defined(STM32G0) || defined(STM32H5)
 	FDCAN_GlobalTypeDef *interface;
 #else
 	CAN_TypeDef *interface;
